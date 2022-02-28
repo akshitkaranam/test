@@ -4,7 +4,8 @@ import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import { HttpError } from 'http-errors';
-import { router } from './routes/router';
+import restaurantRouter from './routes/restaurantRouter';
+import userRouter from './routes/userRouter';
 
 const app = express();
 (async () => {
@@ -18,7 +19,8 @@ const app = express();
   app.use(cookieParser());
 
   // routes
-  app.use('/user', router);
+  app.use('/user', userRouter);
+  app.use('/restaurant',restaurantRouter)
 
   //error handler
   app.use((err: any, _request: Request, res: Response, _next: NextFunction): void => {

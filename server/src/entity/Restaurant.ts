@@ -1,5 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, ManyToMany } from 'typeorm';
-import { ListRestaurant } from './ListRestaurant';
+// import { ListRestaurant } from './ListRestaurant';
+import { PersonalList } from './PersonalList';
 
 @Entity()
 export class Restaurant extends BaseEntity {
@@ -9,6 +10,6 @@ export class Restaurant extends BaseEntity {
   @Column()
   name: string;
 
-  @ManyToMany(() => ListRestaurant,   listRestaurnat => listRestaurnat.restaurants)
-    listRestaurants: ListRestaurant[]
+  @ManyToMany(() => PersonalList,   personalList => personalList.restaurants)
+    list: PersonalList[]
 }

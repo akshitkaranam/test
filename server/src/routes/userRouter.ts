@@ -10,9 +10,10 @@ import {
   updateUserByID,
   deletePersonalLists,
   addRestaurantToList,
-  createNewRestaurant,
-  getAllRestaurants,
-  getListRestaurantsByListID,
+  // createNewRestaurant,
+  // getAllRestaurants,
+  getRestaurantsByListID,
+  removeRestaurantToList,
 } from '../controllers/userController';
 
 const userRouter = Router();
@@ -23,11 +24,10 @@ userRouter.post('/login', login);
 
 userRouter.route('/list/:id').post(createNewList).get(getAllPersonalLists);
 userRouter.route('/deleteList/:id').delete(deletePersonalLists);
-userRouter.route('/list/:listID/:restaurantID').post(addRestaurantToList);
+userRouter.route('/list/:listID/:restaurantID').post(addRestaurantToList).put(removeRestaurantToList);
 
 userRouter.route('/byId/:id').get(getUserByID).put(updateUserByID).delete(deleteUser);
-userRouter.get('/listrestaurant/:id', getListRestaurantsByListID);
+userRouter.get('/listrestaurant/:id', getRestaurantsByListID);
 
-userRouter.post('/createRestaurant', createNewRestaurant);
-userRouter.get('/getAllRestaurant', getAllRestaurants);
+
 export default userRouter;

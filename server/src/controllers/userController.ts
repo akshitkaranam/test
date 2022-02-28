@@ -6,7 +6,6 @@ import { PersonalList } from '../entity/PersonalList';
 import { createAccessToken, sendRefreshToken, createRefreshToken } from '../utils/token';
 import { validate } from 'class-validator';
 import { getConnection } from 'typeorm';
-import { ListRestaurant } from '../entity/ListRestaurant';
 import { Restaurant } from '../entity/Restaurant';
 
 // @desc    Create New Account
@@ -115,7 +114,7 @@ export const getAllUsers = async (
 
 // @desc    Get User By ID
 // @route   GET /users/:id
-// @access  Public
+// @access  Private
 export const getUserByID = async (
   req: Request,
   res: Response,
@@ -135,7 +134,7 @@ export const getUserByID = async (
 
 // @desc    Update User By ID
 // @route   PUT /users/:id
-// @access  Public
+// @access  Private
 export const updateUserByID = async (
   req: Request,
   res: Response,
@@ -161,7 +160,7 @@ export const updateUserByID = async (
 
 // @desc    Delete User By ID
 // @route   DELETE /users/:id
-// @access  Public
+// @access  Private
 export const deleteUser = async (
   req: Request,
   res: Response,
@@ -258,7 +257,25 @@ export const deletePersonalLists = async (
   }
 };
 
-// @desc    Add Restaurant to List by List ID
+// @desc    Get Lists By User ID
+// @route   GET /listrestaurant/:id
+// @access  Private
+export const getRestaurantsByListID = async (
+  _req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    const personalList = await PersonalList.find({
+      relations: ['restaurants'],
+    });
+    res.status(201).json(personalList);
+  } catch (err) {
+    next(err);
+  }
+};
+
+// @desc    Add Restaurant to List by List ID, Restaurant ID
 // @route   POST /list/:listID/:restaurantID
 // @access  Private
 export const addRestaurantToList = async (
@@ -269,94 +286,57 @@ export const addRestaurantToList = async (
   const { listID, restaurantID }: any = req.params;
 
   try {
-    const currentListRestaurants = await ListRestaurant.find({
-      relations: ['personalList', 'restaurants'],
-    });
-    
-    if(currentListRestaurants){
-      currentListRestaurants.forEach((x) => {
-        x.restaurants.forEach((y) => {
-          if(y.id === restaurantID){
-            next(createHttpError(401,"Restaurant already exists in list!"))
-          }
-        })
-      })  
-    }
-   
     const list = await PersonalList.find({ where: { id: listID } });
     const restaurant = await Restaurant.find({ where: { id: restaurantID } });
-    const listRestaurant = new ListRestaurant();
-    listRestaurant.addPersonalList(list[0]);
-    listRestaurant.addRestaurant(restaurant[0]);
-    const r = await ListRestaurant.save(listRestaurant);
 
-    res.status(201).json(r);
+    list[0].restaurants.forEach((x) => {
+      if (x.id === restaurantID) {
+        next(createHttpError('401', 'Restaurant already present in list!'));
+      }
+    });
+
+    list[0].addRestaurant(restaurant[0]);
+    await PersonalList.save(list);
+    res.status(201).json(true);
   } catch (err) {
     next(err);
     return;
   }
 };
 
-// @desc    Get Lists By User ID
-// @route   GET /listrestaurant/:id
+// @desc    Remove Restaurant fom List by List ID, RestaurantID
+// @route   PUT /list/:listID/:restaurantID
 // @access  Private
-export const getListRestaurantsByListID = async (
-  _req: Request,
-  res: Response,
-  next: NextFunction,
-): Promise<void> => {
-
-  console.log('reachd here');
-  try {
-    const currentListRestaurants = await ListRestaurant.find({
-      relations: ['personalList', 'restaurants'],
-      // where: {
-      //   personalList:{id: req.params.id}
-      // }
-    });
-    res.status(201).json(currentListRestaurants)
-    
-  } catch (err) {
-    next(err);
-  }
-};
-
-export const createNewRestaurant = async (
+export const removeRestaurantToList = async (
   req: Request,
   res: Response,
   next: NextFunction,
 ): Promise<void> => {
-  const { name } = req.body;
-
-  if (!name) {
-    next(createHttpError(401, 'Restaurant Name field cannot be empty!'));
-  }
-
-  const restaurant = new Restaurant();
-  restaurant.name = name;
+  const { listID, restaurantID }: any = req.params;
 
   try {
-    await Restaurant.insert(restaurant);
+    const list = await PersonalList.find({ where: { id: listID } });
+    let found:boolean = false;
+    list[0].restaurants.forEach((x) => {
+      if (x.id === restaurantID) {
+        found = true
+        console.log("Found! ")
+        list[0].removeRestaurant(x.id)
+        // console.log(list[0])
+      }
+    });
+
+    if(!found){
+      next(createHttpError(401,"Restaurant not added to Personal List"))
+    }
+    await PersonalList.save(list);
+    res.status(201).json(true);
   } catch (err) {
     next(err);
     return;
   }
-
-  res.status(201).send(true);
 };
 
-// @desc    Get All Users (For Admin UI/ Development Purposes)
-// @route   /users
-// @access  Private
-export const getAllRestaurants = async (
-  _req: Request,
-  res: Response,
-  next: NextFunction,
-): Promise<void> => {
-  try {
-    const All = await Restaurant.find();
-    res.status(201).json(All);
-  } catch (err) {
-    next(err);
-  }
-};
+
+
+
