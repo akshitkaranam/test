@@ -1,0 +1,59 @@
+version: "3.7"
+
+services:
+  api:
+    image: node:17-alpine3.14
+    build: ./server/
+    container_name: cryspbook-api
+    command: sh -c "npm start"
+    working_dir: /usr/src/app
+    volumes:
+      - ./server/:/usr/src/app
+    ports:
+      - 8080:8080
+    env_file:
+      - ./.env.dev
+    depends_on:
+      - postgres
+
+  client:
+    image: node:17-alpine3.14
+    build: ./client/
+    container_name: cryspbook-client
+    command: sh -c "npm run dev"
+    working_dir: /usr/src/app
+    volumes:
+      - ./client/:/usr/src/app/
+    ports:
+      - 3000:3000
+    env_file:
+      - ./.env.dev.client
+    depends_on:
+      - api
+
+  postgres:
+    image: postgres
+    container_name: cryspbook-postgres
+    volumes:
+      - cryspbook-postgres:/var/lib/postgresql/data/
+    restart: always
+    ports:
+      - 5432:5432
+    env_file:
+      - ./.env.dev.db
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: cryspbook-pgadmin
+    volumes:
+      - cryspbook-pgadmin:/var/lib/pgadmin
+    env_file:
+      - ./.env.dev.pgadmin
+    ports:
+      - 5050:80
+    logging:
+      driver: "none"
+
+volumes:
+  cryspbook-postgres:
+  cryspbook-pgadmin:
