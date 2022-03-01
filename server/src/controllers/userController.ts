@@ -7,6 +7,7 @@ import { createAccessToken, sendRefreshToken, createRefreshToken } from '../util
 import { validate } from 'class-validator';
 import { getConnection } from 'typeorm';
 import { Restaurant } from '../entity/Restaurant';
+import { Review } from '../entity/Review';
 
 // @desc    Create New Account
 // @route   POST /signup
@@ -375,6 +376,61 @@ export const removeRestaurantToList = async (
     return;
   }
 };
+
+// @desc    Create (ADD) Review to Restaurant and User by List ID, Restaurant ID
+// @route   POST /review/:userID/:restaurantID
+// @access  Private
+export const addReview = async (
+  req: Request,
+  _res: Response,
+  next: NextFunction,
+): Promise<void> => {
+
+  
+  const { userID, restaurantID }: any = req.params;
+  const {rating, text, totalPrice, pax}: any = req.body;
+  
+  try{
+    if (!(rating && text && totalPrice && pax)) {
+      next(createHttpError(422, 'Fields cannot be empty'));
+      return;
+    }
+
+    console.log(rating)
+    console.log(text)
+    console.log(totalPrice)
+    console.log(pax)
+  
+    const review = new Review()
+    review.rating = rating
+    review.text = text
+    review.totalPrice = parseFloat(totalPrice)
+    review.pax = pax
+  
+    const errors = await validate(review);
+    if (errors.length > 0) {
+      let allErrors: string[] = [];
+      errors.map(({ constraints }) => {
+        if (constraints) allErrors.push(...Object.values(constraints));
+      });
+      next(createHttpError(422, allErrors.join('\n')));
+      return;
+    }
+
+    const user = await AppUser.find({ where: { id: userID } });
+    const restaurant = await Restaurant.find({ where: { id: restaurantID } });
+    review.restaurant = restaurant[0]
+    review.user = user[0]
+    // await Review.insert(review)
+
+  } catch (err) {
+    next(err);
+    return;
+  }
+  
+}
+
+
 
 
 

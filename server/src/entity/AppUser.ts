@@ -1,6 +1,7 @@
-import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, CreateDateColumn, OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, CreateDateColumn, OneToMany, ManyToOne, JoinTable } from 'typeorm';
 import { IsEmail, MinLength, MaxLength } from 'class-validator';
 import { PersonalList } from './PersonalList';
+import { Review } from './Review'
 
 @Entity()
 export class AppUser extends BaseEntity {
@@ -42,7 +43,16 @@ export class AppUser extends BaseEntity {
 
   @OneToMany(() => PersonalList, (list:PersonalList) => list.id) 
   public list: PersonalList
-  
 
-  
+  @ManyToOne( () => Review, review => review.id)
+  @JoinTable()
+  public reviews: Review[]
+
+  addReviewToUser(restaurant: Review) {
+    if (this.reviews == null) {
+      this.reviews = new Array<Review>();
+    }
+    this.reviews.push(restaurant);
+  }
+
 }
