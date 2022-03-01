@@ -66,7 +66,7 @@ export const signup = async (req: Request, res: Response, next: NextFunction): P
   res.status(201).send(true);
 };
 
-// @desc    Login User
+// @desc    Login User (READ)
 // @route   POST /login
 // @access  Public
 export const login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -96,8 +96,8 @@ export const login = async (req: Request, res: Response, next: NextFunction): Pr
   });
 };
 
-// @desc    Get All Users (For Admin UI/ Development Purposes)
-// @route   /users
+// @desc    (READ) Get All Users (For Admin UI/ Development Purposes)
+// @route   GET /users
 // @access  Private
 export const getAllUsers = async (
   _req: Request,
@@ -112,8 +112,8 @@ export const getAllUsers = async (
   }
 };
 
-// @desc    Get User By ID
-// @route   GET /users/:id
+// @desc    Get (READ) User By ID
+// @route   GET /users/byId/:id
 // @access  Private
 export const getUserByID = async (
   req: Request,
@@ -133,7 +133,7 @@ export const getUserByID = async (
 };
 
 // @desc    Update User By ID
-// @route   PUT /users/:id
+// @route   PUT /users/byId/:id
 // @access  Private
 export const updateUserByID = async (
   req: Request,
@@ -159,7 +159,7 @@ export const updateUserByID = async (
 };
 
 // @desc    Delete User By ID
-// @route   DELETE /users/:id
+// @route   DELETE /users/byId/:id
 // @access  Private
 export const deleteUser = async (
   req: Request,
@@ -223,7 +223,7 @@ export const createNewList = async (
   res.status(201).send(true);
 };
 
-// @desc    Get Lists By User ID
+// @desc    Read Lists By User ID
 // @route   GET /list/:id
 // @access  Private
 export const getAllPersonalLists = async (
@@ -241,8 +241,45 @@ export const getAllPersonalLists = async (
   }
 };
 
+// @desc    Update List using ListID
+// @route   PUT /list/:id
+// @access  Private
+export const updateList = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  const { listName } = req.body;
+  const listID: any = req.params.id;
+  if (!listName) {
+    next(createHttpError(401, 'List Name field cannot be empty!'));
+  }
+
+  const requiredList = await PersonalList.find({where: {id: listID}})
+  requiredList[0].listName = listName
+  const errors = await validate(requiredList[0]);
+  
+  if (errors.length > 0) {
+    let allErrors: string[] = [];
+    errors.map(({ constraints }) => {
+      if (constraints) allErrors.push(...Object.values(constraints));
+    });
+    next(createHttpError(422, allErrors.join('\n')));
+    return;
+  }
+
+  try {
+    await PersonalList.save(requiredList);
+  } catch (err) {
+    next(err);
+    return;
+  }
+  res.status(201).send(true);
+};
+
+
 // @desc    Delete List by List ID
-// @route   GET /list/:id
+// @route   DELETE /list/:id
 // @access  Private
 export const deletePersonalLists = async (
   req: Request,
@@ -257,25 +294,7 @@ export const deletePersonalLists = async (
   }
 };
 
-// @desc    Get Lists By User ID
-// @route   GET /listrestaurant/:id
-// @access  Private
-export const getRestaurantsByListID = async (
-  _req: Request,
-  res: Response,
-  next: NextFunction,
-): Promise<void> => {
-  try {
-    const personalList = await PersonalList.find({
-      relations: ['restaurants'],
-    });
-    res.status(201).json(personalList);
-  } catch (err) {
-    next(err);
-  }
-};
-
-// @desc    Add Restaurant to List by List ID, Restaurant ID
+// @desc    Create (ADD) Restaurant to List by List ID, Restaurant ID
 // @route   POST /list/:listID/:restaurantID
 // @access  Private
 export const addRestaurantToList = async (
@@ -304,7 +323,27 @@ export const addRestaurantToList = async (
   }
 };
 
-// @desc    Remove Restaurant fom List by List ID, RestaurantID
+
+// @desc    Read 'ListRestaurant' to get all Restaurants by ListID
+// @route   GET list/listrestaurant/:id
+// @access  Private
+export const getRestaurantsByListID = async (
+  _req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    const personalList = await PersonalList.find({
+      relations: ['restaurants'],
+    });
+    res.status(201).json(personalList);
+  } catch (err) {
+    next(err);
+  }
+};
+
+
+// @desc    Update -> Remove Restaurant fom List by List ID, RestaurantID
 // @route   PUT /list/:listID/:restaurantID
 // @access  Private
 export const removeRestaurantToList = async (
